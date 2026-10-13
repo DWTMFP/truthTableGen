@@ -13,8 +13,15 @@ logger = logging.getLogger()
 
 type TruthTable = list[list[str]]
 
-OPERANDS = frozenset({"v", "^", "!", "<=>", "=>"})
+OPERANDS = frozenset({"v", "^", "xor", "!", "<=>", "=>"})
 SUPPORTED_OPERANDS = frozenset({})
+
+# Operands:
+# land: A and B
+# lor: A or B
+# lxor: A ^ B
+# equiv(<=>) : not(A ^ B)
+# Implikation: not A or B
 
 
 class gridTypes(StrEnum):
@@ -126,13 +133,36 @@ def display_terminal_table(truthTable: TruthTable, grid: str) -> None:
         print(bottom_rule)
 
 
-def createTexString(truthTable: TruthTable) -> str:
+def createTexString(truthTable: TruthTable, grid: str) -> str:
+    latexGrid = "c" * len(truthTable[0])
+    if grid == gridTypes.all:
+        latexGrid = "|" + "c|" * len(truthTable[0])
+    elif grid == gridTypes.partial:
+        latexGrid = ("c|" * len(truthTable[0])).removesuffix("|")
+
+    def editLine(row: str, curr_row: int):
+        if curr_row == 0 and grid != gridTypes.none:
+            return row + "\\hline \\\\ \n"
+        if grid == gridTypes.all:
+            return row + "\\hline \\\\ \n"
+        return row + "\\\\ \n"
+
     tex_str = "\\begin{table}\n\\label{}\n\\caption{}\n"
-    tex_str += "\\begin{tabular}{" + "c" * len(truthTable[0]) + "}\n"
-    for line in truthTable:
-        tex_str += " & ".join(line).removeprefix(" & ") + " \\\\ \n"
+    tex_str += "\\begin{tabular}{" + latexGrid + "}\n"
+    for curr_row, line in enumerate(truthTable):
+        tex_str += editLine(" & ".join(line).removeprefix(" & "), curr_row)
     tex_str += "\\end{tabular}\n\\end{table}"
     return tex_str
+
+
+def getTruthValue(variable: str, truthTable: TruthTable, row: int) -> str:
+    pass
+
+
+def getCompleteTruthTable() -> TruthTable:
+    incomplete_table = getTruthTable()
+
+    return []
 
 
 def getTruthTable(formulas: list[str]) -> TruthTable:
@@ -170,7 +200,7 @@ def main(args: Sequence[str] | None = None):
     truthTable = getTruthTable(args.formulas)
 
     if args.tex:
-        print(createTexString(truthTable))
+        print(createTexString(truthTable, config["grid"]))
 
     if not (args.tex and args.noCLI):
         display_terminal_table(truthTable, config["grid"])
